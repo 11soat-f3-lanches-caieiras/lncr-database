@@ -22,6 +22,7 @@ jobs:
       with:
         terraform_version: ${{ env.TERRAFORM_VERSION }}
 
+
     - name: Terraform Init
       run: terraform init
       continue-on-error: false
@@ -61,7 +62,6 @@ jobs:
     name: Terraform Deploy
     runs-on: codebuild-github-lncr-database-${{ github.run_id }}-${{ github.run_attempt }}
 
-
     needs: [plan, approve]
     if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
     
@@ -73,6 +73,11 @@ jobs:
       uses: hashicorp/setup-terraform@v3
       with:
         terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+    - name: Install PostgreSQL Client
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y postgresql-client
 
     - name: Terraform Init
       run: terraform init
