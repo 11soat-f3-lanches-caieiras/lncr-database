@@ -5,6 +5,12 @@ terraform {
       version = "~> 5.0"
     }
   }
+
+  backend "s3" {
+    bucket = "lncr-infra-tfstate"
+    key    = "database/terraform.tfstate"
+    region = "us-east-1"
+  }
 }
 
 provider "aws" {
