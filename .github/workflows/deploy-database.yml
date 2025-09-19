@@ -76,8 +76,8 @@ jobs:
 
     - name: Install PostgreSQL Client
       run: |
-        sudo apt-get update
-        sudo apt-get install -y postgresql-client
+        sudo yum update -y
+        sudo yum install -y postgresql
 
     - name: Terraform Init
       run: terraform init
