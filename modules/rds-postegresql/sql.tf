@@ -21,13 +21,6 @@ data "aws_secretsmanager_secret_version" "db_password" {
   secret_id = aws_db_instance.postgresql.master_user_secret[0].secret_arn
 }
 
-resource "postgresql_database" "app_database" {
-  name  = var.db_name
-  owner = aws_db_instance.postgresql.username
-
-  depends_on = [aws_db_instance.postgresql]
-}
-
 resource "null_resource" "sql_scripts" {
   for_each = {
     "1-database-config" = file("${path.root}/sql/1-database-config.sql")
@@ -48,10 +41,7 @@ resource "null_resource" "sql_scripts" {
     EOT
   }
 
-  depends_on = [
-    aws_db_instance.postgresql,
-    postgresql_database.app_database
-  ]
+  depends_on = [aws_db_instance.postgresql]
 
   triggers = {
     sql_content = each.value
