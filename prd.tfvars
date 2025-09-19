@@ -1,4 +1,4 @@
-db_name          = "lncr_database"
+db_name          = "fiap"
 db_username      = "postgres"
 instance_class   = "db.t4g.small"
 allocated_storage = 50
