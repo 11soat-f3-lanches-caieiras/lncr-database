@@ -77,7 +77,7 @@ jobs:
     - name: Install PostgreSQL Client
       run: |
         sudo yum update -y
-        sudo yum install -y postgresql
+        sudo dnf install -y postgresql15
 
     - name: Terraform Init
       run: terraform init
