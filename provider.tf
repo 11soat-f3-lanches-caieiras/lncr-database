@@ -7,7 +7,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket = "lncr-infra-tfstate"
+    bucket = "lncr-soat-tfstate"
     key    = "database/terraform.tfstate"
     region = "us-east-1"
   }
