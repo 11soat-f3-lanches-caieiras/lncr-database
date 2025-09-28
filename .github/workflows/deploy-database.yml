@@ -4,9 +4,16 @@ env:
   TERRAFORM_VERSION: 1.5.7
 
 on:
-  push:
-    branches: [ develop ]
+  repository_dispatch:
+    types: [infra-base-completed]
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      branch:
+        description: 'Branch to deploy'
+        required: false
+        default: 'develop'
+        type: string
 
 jobs:
   plan:
