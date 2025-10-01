@@ -1,6 +1,7 @@
 data "aws_vpc" "main" {
   filter {
-    name   = "cidr"
-    values = ["10.1.0.0/16"]
+    name   = "tag:Name"
+    values = ["lncr-prd-vpc"]
   }
 }
+

@@ -62,39 +62,7 @@ resource "null_resource" "validate_database" {
   }
 }
 
-# Script para verificar se o schema/estrutura já existe
-resource "null_resource" "check_database_structure" {
-  provisioner "local-exec" {
-    command = <<-EOT
-      echo "Checking if database structure exists..."
-
-      PGPASSWORD='${jsondecode(data.aws_secretsmanager_secret_version.db_password.secret_string)["password"]}' \
-      table_count=$(psql -h ${aws_db_instance.postgresql.address} \
-                         -p 5432 \
-                         -U ${aws_db_instance.postgresql.username} \
-                         -d ${aws_db_instance.postgresql.db_name} \
-                         -tAc "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';")
-
-      echo "Found $table_count tables in the database"
-
-      if [ "$table_count" -eq "0" ]; then
-        echo "Database structure not found. Scripts will be executed."
-        echo "execute_scripts=true" > /tmp/db_check_result.txt
-      else
-        echo "Database structure already exists. Skipping script execution."
-        echo "execute_scripts=false" > /tmp/db_check_result.txt
-      fi
-    EOT
-  }
-
-  depends_on = [null_resource.validate_database]
-
-  triggers = {
-    always_check = timestamp()
-  }
-}
-
-# Scripts SQL executados apenas se a estrutura não existir
+# Scripts SQL executados em ordem sequencial
 resource "null_resource" "sql_scripts" {
   for_each = {
     "1-database-config" = "1-database-config.sql"
@@ -106,38 +74,37 @@ resource "null_resource" "sql_scripts" {
 
   provisioner "local-exec" {
     command = <<-EOT
-      # Verificar se devemos executar os scripts
-      if [ -f /tmp/db_check_result.txt ]; then
-        execute_scripts=$(grep "execute_scripts=" /tmp/db_check_result.txt | cut -d'=' -f2)
+      echo "Executing SQL script: ${each.value}"
 
-        if [ "$execute_scripts" = "true" ]; then
-          echo "Executing SQL script: ${each.value}"
+      # Verificar se o arquivo existe
+      if [ ! -f "${path.root}/sql/${each.value}" ]; then
+        echo "ERROR: SQL file ${path.root}/sql/${each.value} not found!"
+        exit 1
+      fi
 
-          PGPASSWORD='${jsondecode(data.aws_secretsmanager_secret_version.db_password.secret_string)["password"]}' \
-          psql -h ${aws_db_instance.postgresql.address} \
-               -p 5432 \
-               -U ${aws_db_instance.postgresql.username} \
-               -d ${aws_db_instance.postgresql.db_name} \
-               -f ${path.root}/sql/${each.value}
+      # Executar o script SQL com tratamento de erro melhorado
+      PGPASSWORD='${jsondecode(data.aws_secretsmanager_secret_version.db_password.secret_string)["password"]}' \
+      psql -h ${aws_db_instance.postgresql.address} \
+           -p 5432 \
+           -U ${aws_db_instance.postgresql.username} \
+           -d ${aws_db_instance.postgresql.db_name} \
+           -v ON_ERROR_STOP=1 \
+           -f ${path.root}/sql/${each.value}
 
-          if [ $? -eq 0 ]; then
-            echo "Successfully executed: ${each.value}"
-          else
-            echo "Error executing: ${each.value}"
-            exit 1
-          fi
-        else
-          echo "Skipping SQL script execution - database structure already exists"
-        fi
+      exit_code=$?
+      if [ $exit_code -eq 0 ]; then
+        echo "Successfully executed: ${each.value}"
       else
-        echo "Database check result not found. Skipping script execution."
+        echo "Error executing: ${each.value} (exit code: $exit_code)"
+        exit $exit_code
       fi
     EOT
   }
 
-  depends_on = [null_resource.check_database_structure]
+  depends_on = [null_resource.validate_database]
 
   triggers = {
     sql_file_hash = filemd5("${path.root}/sql/${each.value}")
+    db_instance_id = aws_db_instance.postgresql.id
   }
 }

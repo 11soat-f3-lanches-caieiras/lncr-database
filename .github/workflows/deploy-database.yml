@@ -29,6 +29,10 @@ jobs:
       with:
         terraform_version: ${{ env.TERRAFORM_VERSION }}
 
+    - name: Install PostgreSQL Client
+      run: |
+        sudo yum update -y
+        sudo dnf install -y postgresql15
 
     - name: Terraform Init
       run: terraform init
@@ -101,3 +105,18 @@ jobs:
     - name: Terraform Apply
       run: terraform apply tfplan
       continue-on-error: false
+
+    - name: Verify Database Structure
+      run: |
+        echo "Waiting for database to be fully ready..."
+        sleep 30
+        
+        echo "Verifying database structure..."
+        PGPASSWORD=$(aws secretsmanager get-secret-value \
+          --secret-id $(terraform output -raw master_user_secret_arn) \
+          --query SecretString --output text | jq -r .password) \
+        psql -h $(terraform output -raw db_instance_endpoint | cut -d: -f1) \
+             -p 5432 \
+             -U $(terraform output -raw db_instance_username) \
+             -d $(terraform output -raw db_name) \
+             -c "\dt; \di; SELECT schemaname,tablename FROM pg_tables WHERE schemaname='public';"
