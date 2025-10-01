@@ -60,7 +60,7 @@ jobs:
       uses: trstringer/manual-approval@v1
       with:
         secret: ${{ github.TOKEN }}
-        approvers: gustavo-log
+        approvers: gustavo-log, titoparizotto
         minimum-approvals: 1
         issue-title: "Deploy Database Infrastructure to Production"
         issue-body: "Please approve the deployment of database infrastructure changes to production environment."
