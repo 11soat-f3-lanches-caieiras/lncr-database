@@ -13,7 +13,6 @@ SET idle_in_transaction_session_timeout = 0;
 -- Configurações de encoding e padrões
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
-SELECT pg_catalog.set_config('search_path', '', false);
 
 -- Configurações de validação e comportamento
 SET check_function_bodies = false;
@@ -25,9 +24,15 @@ SET row_security = off;
 SET default_tablespace = '';
 SET default_table_access_method = heap;
 
+-- Definir o search_path para o schema public antes de criar as extensões
+SET search_path = public;
+
 -- Extensões úteis para o sistema
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
+CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA public;
+
+-- Limpar o search_path após criar as extensões
+SELECT pg_catalog.set_config('search_path', '', false);
 
 -- Comentário no banco atual
 COMMENT ON DATABASE CURRENT_DATABASE IS 'Lanches Caieiras - Sistema de Pedidos';
