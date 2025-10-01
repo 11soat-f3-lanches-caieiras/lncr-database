@@ -7,7 +7,7 @@ variable "db_name" {
 variable "db_username" {
   description = "Username do banco de dados"
   type        = string
-  default     = "postgres"
+  default     = "lncr-app"
 }
 
 variable "instance_class" {
