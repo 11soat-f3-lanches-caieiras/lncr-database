@@ -8,6 +8,8 @@ terraform {
     }
   }
 
+  #Backend local temporário até que o bucket S3 seja criado
+  #Para usar o backend S3, descomente as linhas abaixo após criar o bucket
   backend "s3" {
     bucket         = "lncr-prd-terraform-state"
     key            = "database/terraform.tfstate"
@@ -17,15 +19,3 @@ terraform {
   }
 }
 
-provider "aws" {
-  region = "us-east-1"
-
-  default_tags {
-    tags = {
-      Project     = "postgresql"
-      Environment = var.environment
-      ManagedBy   = "terraform"
-      Module      = "database"
-    }
-  }
-}
