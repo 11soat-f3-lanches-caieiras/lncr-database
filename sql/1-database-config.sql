@@ -2,23 +2,8 @@
 -- PostgreSQL Database Configuration
 -- Configurações de conexão e ambiente do banco de dados
 
--- Database: postgres
-
--- DROP DATABASE IF EXISTS postgres;
-
-CREATE DATABASE postgres
-    WITH
-    OWNER = postgres
-    ENCODING = 'UTF8'
-    LC_COLLATE = 'en_US.utf8'
-    LC_CTYPE = 'en_US.utf8'
-    LOCALE_PROVIDER = 'libc'
-    TABLESPACE = pg_default
-    CONNECTION LIMIT = -1
-    IS_TEMPLATE = False;
-
-COMMENT ON DATABASE postgres
-    IS 'default administrative connection database';
+-- Nota: O banco é criado automaticamente pelo Terraform RDS
+-- Este script apenas configura o ambiente e sessão
 
 -- Configurações de timeout e sessão
 SET statement_timeout = 0;
@@ -40,3 +25,10 @@ SET row_security = off;
 -- Configurações de tablespace e métodos de acesso
 SET default_tablespace = '';
 SET default_table_access_method = heap;
+
+-- Extensões úteis para o sistema
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- Comentário no banco atual
+COMMENT ON DATABASE CURRENT_DATABASE IS 'Lanches Caieiras - Sistema de Pedidos';
