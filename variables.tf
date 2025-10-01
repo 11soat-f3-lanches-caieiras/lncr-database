@@ -1,7 +1,7 @@
 variable "db_name" {
   description = "Nome do banco de dados"
   type        = string
-  default     = "postgres"
+  default     = "lncr-db"
 }
 
 variable "db_username" {
@@ -13,13 +13,13 @@ variable "db_username" {
 variable "instance_class" {
   description = "Classe da instância RDS"
   type        = string
-  default     = "db.t3.micro"
+  default     = "db.t4g.small"
 }
 
 variable "allocated_storage" {
   description = "Storage alocado em GB"
   type        = number
-  default     = 20
+  default     = 50
 }
 
 variable "environment" {
