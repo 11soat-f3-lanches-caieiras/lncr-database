@@ -131,22 +131,6 @@ BEGIN
     END IF;
 END $$;
 
--- Sequência para order_status
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_sequences WHERE sequencename = 'order_status_id_seq') THEN
-        CREATE SEQUENCE public.order_status_id_seq
-            START WITH 1
-            INCREMENT BY 1
-            NO MINVALUE
-            NO MAXVALUE
-            CACHE 1;
-
-        ALTER TABLE public.order_status ALTER COLUMN id SET DEFAULT nextval('public.order_status_id_seq'::regclass);
-        ALTER SEQUENCE public.order_status_id_seq OWNED BY public.order_status.id;
-    END IF;
-END $$;
-
 -- Sequência para payment
 DO $$
 BEGIN
