@@ -1,0 +1,186 @@
+// LNCR System - Database Diagram
+// Use este código em https://dbdiagram.io para visualizar o DER
+
+Project LNCR_Database {
+  database_type: 'PostgreSQL'
+  Note: '''
+    Sistema de Gerenciamento de Pedidos para Lanchonete
+    Lanches Caieiras - Fase 3
+    Data: 03/10/2025
+  '''
+}
+
+// === DOMÍNIO DO CLIENTE ===
+Table customer {
+  id integer [pk, increment]
+  document_number varchar(255) [unique, note: 'CPF/CNPJ']
+  email varchar(255) [unique, note: 'Email único']
+  name varchar(255) [note: 'Nome do cliente']
+
+  indexes {
+    id [name: 'customer_id_idx']
+    document_number [name: 'customer_document_number_idx']
+    email [name: 'customer_email_idx']
+  }
+
+  Note: 'Cadastro de clientes da lanchonete'
+}
+
+// === DOMÍNIO DO CARDÁPIO ===
+Table food_item {
+  id integer [pk, increment]
+  category_id integer [note: 'Categoria: lanche, bebida, acompanhamento, sobremesa']
+  description varchar(255) [note: 'Descrição detalhada do produto']
+  name varchar(255) [unique, note: 'Nome único do produto']
+  price double [note: 'Preço unitário em reais']
+
+  indexes {
+    id [name: 'food_item_id_idx']
+    category_id [name: 'food_item_category_idx']
+  }
+
+  Note: 'Itens do cardápio disponíveis'
+}
+
+Table food_item_image {
+  id integer [pk, increment]
+  file_name varchar(255) [note: 'Nome do arquivo de imagem']
+  food_item_id integer [ref: > food_item.id]
+
+  indexes {
+    id [name: 'food_item_image_id_idx']
+    food_item_id [name: 'food_item_image_food_item_id_idx']
+  }
+
+  Note: 'Imagens dos produtos do cardápio'
+}
+
+// === DOMÍNIO DE PEDIDOS ===
+Table customer_order {
+  id integer [pk, increment]
+  created timestamp [note: 'Data/hora de criação do pedido']
+  customer_id integer [note: 'Cliente (opcional para pedidos anônimos)']
+  status_id integer [note: 'Status: criado, confirmado, em_preparo, pronto, entregue, cancelado']
+  total_cost double [note: 'Valor total calculado']
+  updated timestamp [note: 'Última atualização']
+
+  indexes {
+    id [name: 'customer_order_id_idx']
+    customer_id [name: 'customer_order_customer_id_idx']
+    status_id [name: 'customer_order_status_idx']
+    created [name: 'customer_order_created_idx']
+  }
+
+  Note: 'Pedidos realizados pelos clientes'
+}
+
+Table customer_order_food_item {
+  id integer [pk, increment]
+  food_item_id integer [note: 'Referência ao item do cardápio']
+  notes varchar(255) [note: 'Observações especiais (sem cebola, etc.)']
+  order_id integer [ref: > customer_order.id]
+  price double [note: 'Preço no momento do pedido (histórico)']
+
+  indexes {
+    id [name: 'customer_order_food_item_id_idx']
+    order_id [name: 'customer_order_food_item_order_id_idx']
+  }
+
+  Note: 'Itens específicos de cada pedido (carrinho)'
+}
+
+// === DOMÍNIO DA COZINHA ===
+Table kitchen_order {
+  id integer [pk, increment]
+  created timestamp [note: 'Quando o pedido chegou na cozinha']
+  customer_order_id integer [unique, note: 'Referência única ao pedido original']
+  status_id integer [note: 'Status na cozinha: recebido, em_preparo, pronto, entregue']
+  updated timestamp [note: 'Última atualização do status']
+
+  Note: 'Pedidos processados pela cozinha'
+}
+
+Table kitchen_order_food_item {
+  id integer [pk, increment]
+  description varchar(255) [note: 'Descrição do item para a cozinha']
+  kitchen_order_id integer [ref: > kitchen_order.id]
+  name varchar(255) [note: 'Nome do item']
+  notes varchar(255) [note: 'Instruções especiais de preparo']
+
+  Note: 'Itens específicos do pedido na cozinha'
+}
+
+// === DOMÍNIO DE PAGAMENTOS ===
+Table payment {
+  id integer [pk, increment]
+  amount double [note: 'Valor do pagamento']
+  created timestamp [note: 'Data/hora de criação']
+  external_payment_id varchar(255) [note: 'ID do provedor externo']
+  order_id integer [unique, note: 'Referência única ao pedido']
+  payment_method varchar(255) [note: 'Método: pix, cartao, dinheiro']
+  payment_provider varchar(255) [note: 'Provedor: mercadopago, pagseguro, etc.']
+  status_id integer [note: 'Status: pendente, processando, aprovado, rejeitado']
+  updated timestamp [note: 'Última atualização']
+
+  Note: 'Controle de pagamentos dos pedidos'
+}
+
+Table payment_mercadopago {
+  id integer [pk, ref: - payment.id]
+  meli_id varchar(255) [note: 'ID do MercadoLibre/MercadoPago']
+  qr_data varchar(255) [note: 'Dados para geração do QR Code PIX']
+
+  Note: 'Extensão específica para pagamentos MercadoPago'
+}
+
+// === DOMÍNIO DE NOTIFICAÇÕES ===
+Table notifications {
+  id integer [pk, increment]
+  artefact_id integer [note: 'ID do artefato relacionado (pedido, pagamento, etc.)']
+  created timestamp [note: 'Data/hora da notificação']
+  message varchar(255) [note: 'Mensagem da notificação']
+  notification_type varchar(255) [note: 'Tipo: order_status, payment_status, kitchen_update']
+
+  Note: 'Sistema de notificações do aplicativo'
+}
+
+// === RELACIONAMENTOS ENTRE DOMÍNIOS ===
+// Nota: Relacionamentos entre domínios são mantidos como referências fracas
+// para respeitar os bounded contexts do DDD
+
+Ref: customer_order.customer_id > customer.id
+Ref: customer_order_food_item.food_item_id > food_item.id
+Ref: kitchen_order.customer_order_id - customer_order.id
+Ref: payment.order_id - customer_order.id
+
+// === ENUMS E VALORES DE REFERÊNCIA ===
+Enum order_status {
+  CRIADO [note: '1 - Criado']
+  CONFIRMADO [note: '2 - Confirmado']
+  EM_PREPARO [note: '3 - Em Preparo']
+  PRONTO [note: '4 - Pronto']
+  ENTREGUE [note: '5 - Entregue']
+  CANCELADO [note: '6 - Cancelado']
+}
+
+Enum kitchen_status {
+  RECEBIDO [note: '1 - Recebido']
+  EM_PREPARO [note: '2 - Em Preparo']
+  PRONTO [note: '3 - Pronto']
+  ENTREGUE [note: '4 - Entregue']
+}
+
+Enum payment_status {
+  PENDENTE [note: '1 - Pendente']
+  PROCESSANDO [note: '2 - Processando']
+  APROVADO [note: '3 - Aprovado']
+  REJEITADO [note: '4 - Rejeitado']
+  CANCELADO [note: '5 - Cancelado']
+}
+
+Enum food_category {
+  LANCHE [note: '1 - Lanche']
+  ACOMPANHAMENTO [note: '2 - Acompanhamento']
+  BEBIDA [note: '3 - Bebida']
+  SOBREMESA [note: '4 - Sobremesa']
+}
