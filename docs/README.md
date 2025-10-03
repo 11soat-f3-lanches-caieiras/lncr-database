@@ -69,11 +69,17 @@ Os scripts de criação do banco estão localizados em `../sql/`:
 
 ```mermaid
 graph LR
-    A[Cliente] --> B[Pedido]
+
+    A[Cliente] --> FI[Cardápio]
+    A --> B[Pedido]
     B --> C[Pagamento]
-    C --> D[Cozinha]
-    D --> E[Entrega]
-    E --> F[Notificação]
+    C --> B
+    B --> D[Cozinha]
+    D --> B[Pedido]                       
+    B --> F[Notificação]
+    C --> F[Notificação]
+    D --> F[Notificação] 
+
 ```
 
 ## Diagrama Entidade-Relacionamento (DER)
